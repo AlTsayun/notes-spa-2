@@ -1,9 +1,16 @@
 .App {
   background-color: #fff;
   margin: 40px;
-  padding: 20px;
+  border-radius: 25px;
 }
-
+header nav{
+  padding: 10px;
+  border-radius: 25px;
+}
+footer{
+  padding: 10px;
+  border-radius: 25px;
+}
 /* .App-logo {
   height: 40vmin;
   pointer-events: none;

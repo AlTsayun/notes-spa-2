@@ -1,16 +1,29 @@
 import logo from './logo.svg';
 import './App.css';
 import {
-    BrowserRouter as Router,
     Switch,
     Route,
     Link,
-    Redirect
+    Redirect,
+    useHistory
   } from "react-router-dom";
 import NotesList from './components/NotesList/NotesList';
+import { executeFetch } from './utils/fetchutils';
 
 function App() {
-  return (
+
+    const POST_NOTE_URL = 'http://localhost:5000/api/notes'
+
+
+    let history = useHistory()
+    async function createNote() {
+        await executeFetch(POST_NOTE_URL, {method: 'POST'})
+        .then(response => response.json())
+        .then(note => {history.push(`/edit_note/${note.id}`)})
+    }
+
+
+    return (
     <div className="App">
         <header>
             <nav className="App-header navbar navbar-expand bg-light">
@@ -19,26 +32,25 @@ function App() {
                 </div>
                 <ul className="navbar-nav">
                     <li className="nav-item">
-                        <a className="nav-link" href="/" data-link>Start page</a>
+                        <a className="nav-link" href="/">Start page</a>
                     </li>
                     <li className="nav-item">
-                        <a className="nav-link" href="/create_note" data-link>Create note</a>
+                        <a className="nav-link" onClick={async () => {await createNote()}}>Create note</a>
                     </li>
                     <li className="nav-item">
-                        <a className="nav-link" href="/about" data-link>About</a>
+                        <a className="nav-link" href="/about">About</a>
                     </li>
                 </ul>
             </nav>
         </header>
 
         <main className='main'>
-            <Router>
-                <Switch>
-                    <Route path='/editNote/:noteId' component={NotesList} />
-                    <Route exact path='/' component={NotesList} />
-                    <Redirect to='/' />
-                </Switch>
-            </Router>
+            <Switch>
+                <Route path='/editNote/:noteId' component={NotesList} />
+                <Route exact path='/' component={NotesList} />
+                {/* TODO: redirect to error page */}
+                <Redirect to='/' />
+            </Switch>
         </main>
 
 {/*       <header className="App-header">
@@ -56,10 +68,10 @@ function App() {
     </a>
     </header> */}
 
-        <footer>© 2021 Booba</footer>
+        <footer className="bg-light">© 2021 Booba</footer>
     </div>
 
-  );
+    );
 }
 
 export default App;

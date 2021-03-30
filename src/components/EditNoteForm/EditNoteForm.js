@@ -2,26 +2,20 @@ import { useEffect, useState } from "react"
 import { useHistory } from "react-router-dom"
 import React from 'react'
 import { executeFetch } from "../../utils/fetchutils"
-import { formParamsUrl } from "../../utils/urlutils"
 
-function NotesList(props){
-
-    const DELETE_NOTE_URL = 'http://localhost:5000/api/notes/:id'
+function EditNoteForm(props){
+    const GET_NOTE_URL = 'http://localhost:5000/api/notes/:id'
     const GET_NOTES_URL = 'http://localhost:5000/api/notes'
 
     
     const history = useHistory()
 
-    const params = new URLSearchParams(history.location.search)
+    // const params = new URLSearchParams(history.location.search)
 
-    const completionDateOrder =
-        Object.is(params.get("completionDateOrder"), null) ? 'not sorted' : params.get("completionDateOrder")
-    const statusFilter =
-        Object.is(params.get("statusFilter"), null) ? 'all' : params.get("statusFilter")
-
-
-    //TODO: implement scheme with lastSyncronizedState
-    const [lastSyncronizedState, setLastSyncronizedState] = useState()
+    // const completionDateOrder =
+    //     Object.is(params.get("completionDateOrder"), null) ? 'not sorted' : params.get("completionDateOrder")
+    // const statusFilter =
+    //     Object.is(params.get("statusFilter"), null) ? 'all' : params.get("statusFilter")
 
     const [notes, setNotes] = useState(
         [
@@ -43,27 +37,54 @@ function NotesList(props){
             // }
         ]
     )
+    
 
-    useEffect(() => {
-        async function fetchData() {
-            console.log('effect')
-            //TODO: sort notes if completionDateOrder is set 
-            await executeFetch(GET_NOTES_URL, {method: 'GET'})
-            .then(response => response.json())
-            .then(notes => setNotes(notes))
+    useEffect(async() => {
 
-        }
+        await executeFetch(GET_NOTE_URL, {method: 'GET'})
+        .then(response => response.json())
+        .then(note => setNote(note))
+        
+    }, [])
 
-        fetchData();
-      }, [statusFilter]);
 
-    async function deleteNote(id) {
-        await executeFetch(formParamsUrl(DELETE_NOTE_URL, {id: id}), {method: 'DELETE'})
-        setNotes((prev) => {
-            return prev.filter(note => note.id !== id)
-        })
-        //TODO: render after deleting note
-    }
+    // function updateNotes(){
+    //     //TODO: fetch notes from http://localhost:5000/api/notes
+    //     let fetchMethod = 'get'
+    //     let url = GET_NOTES_URL
+    //     fetch(GET_NOTES_URL, {
+    //         method: fetchMethod,
+    //      }).then((response) => {
+    //         console.log(url, `(${fetchMethod}) responded with status`, response.status)
+
+    //         if (!response.ok){
+    //             if (response.status === 404){
+    //                 // view.redirectUrl =  '/404' + urlutils.formQueryString({notFoundUrl: view.params.url})
+    //             } else if (response.status === 403) {
+    //                 console.log('caught 403')
+    //             } else {
+    //                 throw new Error("bad response")
+    //             }
+    //         } else {
+    //             return response.json()
+    //         }
+    //     })
+    //     .then(data => {console.log(data)})
+    //     // .catch(errorHandler)
+    //     .catch(e =>{
+    //         console.log('Caught error', e)
+    //         // throw e
+    //     })
+    //     let notes = []
+    //     setNotes(notes)
+    // }
+    // updateNotes()
+
+    // function removeNote(id){
+    //     fetch('', {
+    //         method: 'delete'
+    //      });
+    // }
 
     console.log('render')
     return (
@@ -117,7 +138,6 @@ function NotesList(props){
                     </label>
                 </th>
                 <th>
-                    {/* TODO: clear statusFilter and statusFilter onclick */}
                     <button className="btn btn-outline-danger" >clear</button>
                 </th>
             </tr>
@@ -134,7 +154,7 @@ function NotesList(props){
                 <td>{note.status}</td>
             
                 <td>
-                    <button className="btn btn-danger" onClick={async () => {await deleteNote(note.id)}} >delete</button>
+                    <button className="btn btn-danger" >delete</button>
                 </td>
             </tr>
             )}
@@ -144,4 +164,4 @@ function NotesList(props){
     );
 }
 
-export default NotesList;
+export default EditNoteForm
