@@ -1,167 +1,252 @@
-import { useEffect, useState } from "react"
-import { useHistory } from "react-router-dom"
+import { useEffect, useState } from 'react'
+import { useHistory, useParams } from 'react-router-dom'
 import React from 'react'
-import { executeFetch } from "../../utils/fetchutils"
+import { executeFetch } from '../../utils/fetchutils'
+import { formParamsUrl } from '../../utils/urlutils'
+import FilesInput from './FilesInput'
 
 function EditNoteForm(props){
-    const GET_NOTE_URL = 'http://localhost:5000/api/notes/:id'
-    const GET_NOTES_URL = 'http://localhost:5000/api/notes'
 
-    
+    const GET_NOTE_URL = '/api/notes/:id'
+    const PUT_NOTE_URL = '/api/notes/:id'
+
     const history = useHistory()
 
-    // const params = new URLSearchParams(history.location.search)
+    const params = useParams()
+    console.log(params)
 
-    // const completionDateOrder =
-    //     Object.is(params.get("completionDateOrder"), null) ? 'not sorted' : params.get("completionDateOrder")
-    // const statusFilter =
-    //     Object.is(params.get("statusFilter"), null) ? 'all' : params.get("statusFilter")
+    const [note, setNote] = useState({
+        id: params.id,
+        title: '',
+        status: 'to do',
+        completionDate: '2020-10-12',
+        text: '',
+        files: [],
+    })
 
-    const [notes, setNotes] = useState(
-        [
-            // {
-            //     id: 0,
-            //     title: "First note",
-            //     status: "to do",
-            //     completionDate: "2020-12-12",
-            //     text: "",
-            //     files: [],
-            // },
-            // {
-            //     id:1,
-            //     title: "Second note",
-            //     status: "to do",
-            //     completionDate: "2021-12-12",
-            //     text: "",
-            //     files: [],
-            // }
-        ]
-    )
-    
-
-    useEffect(async() => {
-
-        await executeFetch(GET_NOTE_URL, {method: 'GET'})
+    async function fetchNote(){
+        await executeFetch(formParamsUrl(GET_NOTE_URL, {id: note.id}), {method: 'GET'})
         .then(response => response.json())
-        .then(note => setNote(note))
+        .then(note => {
+            setNote(note)
+        })
+    }
+
+    async function sendNote(){
+        const formData  = new FormData();
+        for(const name in note) {
+            formData.append(name, note[name]);
+        }
+        formData.delete('files')
+        let dt = new DataTransfer();
+        note.files.forEach(file => {dt.items.add(file)})
+        console.log('dt.files', dt.files)
+        formData.append('files', dt.files)
+
+        await executeFetch(formParamsUrl(PUT_NOTE_URL, {id: note.id}), {method: 'PUT', body: formData})
+    }
+
+    function handleChange(e){
+        console.log(`${e.target.name} has a new value: ${e.target.value}`)
+        setNote((prev) => ({
+            ...prev, [e.target.name]: e.target.value
+        }))
+    }
+
+    async function handleFormSubmit(e){
+        e.preventDefault()
+        console.log('EditNoteForm submitted')
+        await sendNote()
+        history.push('/')
+    }
         
-    }, [])
+    useEffect(() => {
+        fetchNote()
+      }, []);
+    
+    let filesFromChild = []
 
-
-    // function updateNotes(){
-    //     //TODO: fetch notes from http://localhost:5000/api/notes
-    //     let fetchMethod = 'get'
-    //     let url = GET_NOTES_URL
-    //     fetch(GET_NOTES_URL, {
-    //         method: fetchMethod,
-    //      }).then((response) => {
-    //         console.log(url, `(${fetchMethod}) responded with status`, response.status)
-
-    //         if (!response.ok){
-    //             if (response.status === 404){
-    //                 // view.redirectUrl =  '/404' + urlutils.formQueryString({notFoundUrl: view.params.url})
-    //             } else if (response.status === 403) {
-    //                 console.log('caught 403')
-    //             } else {
-    //                 throw new Error("bad response")
-    //             }
-    //         } else {
-    //             return response.json()
-    //         }
-    //     })
-    //     .then(data => {console.log(data)})
-    //     // .catch(errorHandler)
-    //     .catch(e =>{
-    //         console.log('Caught error', e)
-    //         // throw e
-    //     })
-    //     let notes = []
-    //     setNotes(notes)
-    // }
-    // updateNotes()
-
-    // function removeNote(id){
-    //     fetch('', {
-    //         method: 'delete'
-    //      });
-    // }
-
-    console.log('render')
-    return (
-<div>
-    <form method="GET" id="notes_list_form"></form>
-
-    <table className="table table-hover">
-        <thead>
-            <tr>    
-                <th className="col-8">
-                    Title
-                </th>
-                <th className="col-2">
-                    <label>
-                        Date
-                        <br/>
-                        <select name="completionDateOrder" value={completionDateOrder} onChange={(e) => { 
-                            const params = new URLSearchParams(history.location.search)
-                            if (e.target.value === 'not sorted'){
-                                params.delete("completionDateOrder")
-                            } else {
-                                params.set("completionDateOrder", e.target.value)
-                            }
-                            history.push({search: params.toString()})
-                        }} form="notes_list_form">
-                            <option value="not sorted">not sorted</option>
-                            <option value="newest">newest</option>
-                            <option value="oldest">oldest</option>
-                        </select>
-                    </label>
-                </th>
-                <th className="col-2">
-                    <label>
-                        Status
-                        <br/>
-                        <select name="statusFilter" value={statusFilter} onChange={(e) => { 
-                                const params = new URLSearchParams(history.location.search)
-                                if (e.target.value === 'all'){
-                                    params.delete("statusFilter")
-                                } else {
-                                    params.set("statusFilter", e.target.value)
-                                }
-                                history.push({search: params.toString()})
-
-                            } } form="notes_list_form">
-                            <option value="all">all</option>
-                            <option value="to do">to do</option>
-                            <option value="in progress">in progress</option>
-                            <option value="done">done</option>
-                        </select>
-                    </label>
-                </th>
-                <th>
-                    <button className="btn btn-outline-danger" >clear</button>
-                </th>
-            </tr>
-        </thead>
-        <tbody>
+    console.log('render EditNoteForm', note)
+    return ( 
+        <div className='edit_note_main d-flex justify-content-center'>
+            <form method='POST' enctype='multipart/form-data' id='edit_note_form'>
+                    <div className='row'>
+                    <div className='col form-group'>
+                        <input 
+                            className='form-control' 
+                            type='text' 
+                            name='title' 
+                            placeholder='Enter a title' 
+                            value={note.title}
+                            onChange={handleChange}
+                            />
+                    </div>
+                    </div>
+                    
+                    <div className='row'>
+                        <div className='col form-group'>
+                            <div className='d-flex'>
+                                <div className='flex-fill btn-group btn-group-toggle' data-toggle='buttons'>
+                                <label className={'btn btn-outline-primary ' + ((note.status === 'to do') ? 'active' : '')} >
+                                    <input 
+                                        type='radio' 
+                                        name='status' 
+                                        value = 'to do'
+                                        checked={note.state === 'to do'}
+                                        onChange={handleChange}
+                                    />
+                                        to do
+                                </label>
+                                <label className={'btn btn-outline-primary ' + ((note.status === 'in progress') ? 'active' : '')}>
+                                    <input
+                                        type='radio' 
+                                        name='status' 
+                                        value = 'in progress'
+                                        checked={note.status === 'in progress'}
+                                        onChange={ (e) =>{
+                                            console.log(filesFromChild)
+                                            handleChange(e)
+                                        }}
+                                    />
+                                        in progress
+                                </label>
+                                <label className={'btn btn-outline-primary ' + ((note.status === 'done') ? 'active' : '')}>
+                                    <input 
+                                        type='radio' 
+                                        name='status'
+                                        value='done'
+                                        checked={note.status === 'done'}
+                                        onChange={handleChange}
+                                    />
+                                        done
+                                </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div className='col form-group'>
+                            <label className='form-inline d-flex'>
+                                Completion date:
+                                <input 
+                                    className='form-control flex-fill' 
+                                    type='date' 
+                                    name='completionDate' 
+                                    placeholder='Enter a date'
+                                    onChange={handleChange}
+                                    />
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div className='row'>
+                        <div className='col form-group'>
+                            <textarea 
+                                className='form-control' 
+                                rows='5' 
+                                cols='60' 
+                                name='text' 
+                                placeholder='Enter a note' 
+                                value={note.text}
+                                onChange={handleChange}
+                                />
+                        </div>
+                        <div className='col'>
+                            <FilesInput 
+                            files={[]} 
+                            setAddedFiles={addedFiles => {
+                                console.log('setAddedFiles', addedFiles)
+                                setNote((prev) => ({...prev, files: prev.files.concat(addedFiles)}))
+                            }}
+                            setRemovedFiles={removedFiles => {
+                                console.log('setRemovedFiles', removedFiles)
+                                setNote((prev) => ({...prev, files: prev.files.filter(e => !removedFiles.contains(e))}))
+                            }}></FilesInput>
+                        </div>
+                    </div>
+                                
+                    <div className='d-flex justify-content-center form-group'>
+                        <div className='btn-group'>
+                            <input 
+                                className='form-control btn btn-primary' 
+                                type='submit' 
+                                value='Save'
+                                onClick={handleFormSubmit}
+                                />
+                            <a className='form-control btn btn-primary' href='/'>Cancel</a>
+                        </div>
+                    </div>
             
-            {notes.map((note) =>
-            <tr key={note.id}>
-                <td>
-                    <a className="link" href={"/edit_note/" + note.id}>{note.title}</a>
-                </td>
             
-                <td>{note.completionDate}</td>
-                <td>{note.status}</td>
-            
-                <td>
-                    <button className="btn btn-danger" >delete</button>
-                </td>
-            </tr>
-            )}
-        </tbody>
-    </table>
-</div>
-    );
+            </form>
+
+        </div>
+        
+    )
 }
 
 export default EditNoteForm
+
+
+// `
+// <div class='edit_note_main d-flex justify-content-center'>
+//     ${tableForms}
+//     <form method='POST' enctype='multipart/form-data' id='edit_note_form' style='max-width: 800px'>
+// <!--        <div class='form-group'>-->
+//             <div class='form-row'>
+//                 <input class='form-control' type='text' name='title'  placeholder='Enter a title' value='${this.note.title}'/>
+//             </div>
+            
+//             <div class='row'>
+//                 <div class='col'>
+//                     <div class='btn-group form-control' role='group'>
+//                         <input type='radio' class='btn-check' id='btnradio1' name='status' value='to do'
+//                         ${this.note.status === 'to do' ? 'checked': ''}
+//                         >
+//                         <label class='btn btn-outline-primary' for='btnradio1'>to do</label>
+                        
+//                         <input type='radio' class='btn-check'  id='btnradio2' name='status' value='in progress'
+//                         ${this.note.status === 'in progress' ? 'checked': ''}
+//                         >
+//                         <label class='btn btn-outline-primary' for='btnradio2'>in progress</label>
+                        
+//                         <input type='radio' class='btn-check' id='btnradio3' name='status' value='done'
+//                         ${this.note.status === 'done' ? 'checked': ''}
+//                         >
+//                         <label class='btn btn-outline-primary' for='btnradio3'>done</label>
+//                     </div>
+//                 </div>
+//                 <div class='col'>
+//                     <label class='form-control'>
+//                         Completion date:
+//                         <input type='date' name='completionDate' placeholder='Enter a date' value='${this.note.completionDate}'/>
+//                     </label>
+//                 </div>
+//             </div>
+            
+//             <div class='row'>
+//                 <div class='col'>
+//                     <textarea class='form-control' rows='5' cols='60' name='text' placeholder='Enter a note'>${this.note.text}</textarea>
+//                 </div>
+//                 <div class='col'>
+//                     <input class='form-control' type='file' name='files' multiple/>
+//                     <div class='form-control d-flex'>
+//                         <table class='table flex-fill' id='files_table_id'>
+//                             <tbody>
+//                                 ${tableBody}
+//                             </tbody>
+//                         </table>
+//                     </div>
+//                 </div>
+//             </div>
+                        
+//             <div class='d-flex justify-content-center'>
+//                 <div class='btn-group'>
+//                     <input class='form-control btn btn-primary' type='submit'/>
+//                     <a class='form-control btn btn-primary' href='/'>Cancel</a>
+//                 </div>
+//             </div>
+    
+    
+// <!--        </div>-->
+//     </form>
+// </div>
+// `

@@ -1,6 +1,7 @@
 import * as urlutils from "./urlutils"
+// import { createBrowserHistory } from 'history';
 
-export async function executeFetch(url, init, preDefaultErrorHandler = (e) => {throw e}){
+export async function executeFetch(url, init){
     return fetch(url, init)
     .then((response) => {
         console.log(url, `(${init.method}) responded with status`, response.status)
@@ -13,16 +14,15 @@ export async function executeFetch(url, init, preDefaultErrorHandler = (e) => {t
             return response
         }
     })
-    .catch(preDefaultErrorHandler)
-    .catch(e =>{
-        if (e.response.status === 404){
-            console.log('Fetch caught 404')
-            //TODO: redirect to error page
-        } else if (e.response.status === 403) {
-            //TODO: redirect to authorize page
-            console.log('Fetch caught 403')
-        } else {
-            throw e
-        }
-    })
+    // .catch(e =>{
+    //     if (e.response.status === 404){
+    //         console.log('Fetch caught 404')
+    //         //TODO: redirect to error page
+    //     } else if (e.response.status === 403) {
+    //         console.log('Fetch caught 403')
+    //         createBrowserHistory().push('/login');
+    //     } else {
+    //         throw e
+    //     }
+    // })
 }

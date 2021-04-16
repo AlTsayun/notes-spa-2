@@ -9,20 +9,25 @@ import {
   } from "react-router-dom";
 import NotesList from './components/NotesList/NotesList';
 import { executeFetch } from './utils/fetchutils';
+import EditNoteForm from './components/EditNoteForm/EditNoteForm';
+import LogIn from './components/Authentification/LogIn';
+import SignUp from './components/Authentification/SignUp';
 
 function App() {
 
-    const POST_NOTE_URL = 'http://localhost:5000/api/notes'
+    const POST_NOTE_URL = '/api/notes'
 
 
     let history = useHistory()
     async function createNote() {
         await executeFetch(POST_NOTE_URL, {method: 'POST'})
         .then(response => response.json())
-        .then(note => {history.push(`/edit_note/${note.id}`)})
+        .then(note => {
+            history.push(`/editNote/${note.id}`)
+        })
     }
 
-
+    console.log('render App')
     return (
     <div className="App">
         <header>
@@ -32,13 +37,34 @@ function App() {
                 </div>
                 <ul className="navbar-nav">
                     <li className="nav-item">
-                        <a className="nav-link" href="/">Start page</a>
+                        <a className="nav-link" href="/" onClick={async (e) => { 
+                            e.preventDefault()
+                            history.push("/")
+                            }}>Start page</a>
                     </li>
                     <li className="nav-item">
-                        <a className="nav-link" onClick={async () => {await createNote()}}>Create note</a>
+                        <a className="nav-link" href="/" onClick={async (e) => {
+                            e.preventDefault()
+                            await createNote()
+                            }}>Create note</a>
                     </li>
                     <li className="nav-item">
-                        <a className="nav-link" href="/about">About</a>
+                        <a className="nav-link" href="/about" onClick={async (e) => { 
+                            e.preventDefault()
+                            history.push("/about")
+                            }}>About</a>
+                    </li>
+                    <li className="nav-item">
+                        <a className="nav-link" href="/login" onClick={async (e) => { 
+                            e.preventDefault()
+                            history.push("/login")
+                            }}>Log in</a>
+                    </li>
+                    <li className="nav-item">
+                        <a className="nav-link" href="/signup" onClick={async (e) => { 
+                            e.preventDefault()
+                            history.push("/signup")
+                            }}>Sign up</a>
                     </li>
                 </ul>
             </nav>
@@ -46,28 +72,14 @@ function App() {
 
         <main className='main'>
             <Switch>
-                <Route path='/editNote/:noteId' component={NotesList} />
+                <Route path='/editNote/:id' component={EditNoteForm} />
                 <Route exact path='/' component={NotesList} />
+                <Route exact path='/login' component={LogIn} />
+                <Route exact path='/signup' component={SignUp} />
                 {/* TODO: redirect to error page */}
                 <Redirect to='/' />
             </Switch>
         </main>
-
-{/*       <header className="App-header">
-    <img src={logo} className="App-logo" alt="logo" />
-    <p>
-        Edit <code>src/App.js</code> and save to reload.
-    </p>
-    <a
-        className="App-link"
-        href="https://reactjs.org"
-        target="_blank"
-        rel="noopener noreferrer"
-    >
-        Learn React
-    </a>
-    </header> */}
-
         <footer className="bg-light">© 2021 Booba</footer>
     </div>
 

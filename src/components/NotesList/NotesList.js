@@ -4,10 +4,11 @@ import React from 'react'
 import { executeFetch } from "../../utils/fetchutils"
 import { formParamsUrl } from "../../utils/urlutils"
 
+
 function NotesList(props){
 
-    const DELETE_NOTE_URL = 'http://localhost:5000/api/notes/:id'
-    const GET_NOTES_URL = 'http://localhost:5000/api/notes'
+    const DELETE_NOTE_URL = '/api/notes/:id'
+    const GET_NOTES_URL = '/api/notes'
 
     
     const history = useHistory()
@@ -19,53 +20,56 @@ function NotesList(props){
     const statusFilter =
         Object.is(params.get("statusFilter"), null) ? 'all' : params.get("statusFilter")
 
+    const [notes, setNotes] = useState([])
 
-    //TODO: implement scheme with lastSyncronizedState
-    const [lastSyncronizedState, setLastSyncronizedState] = useState()
+    async function fetchNotes(){
+        console.log('Notes are being fetched')
 
-    const [notes, setNotes] = useState(
-        [
-            // {
-            //     id: 0,
-            //     title: "First note",
-            //     status: "to do",
-            //     completionDate: "2020-12-12",
-            //     text: "",
-            //     files: [],
-            // },
-            // {
-            //     id:1,
-            //     title: "Second note",
-            //     status: "to do",
-            //     completionDate: "2021-12-12",
-            //     text: "",
-            //     files: [],
-            // }
-        ]
-    )
-
-    useEffect(() => {
-        async function fetchData() {
-            console.log('effect')
-            //TODO: sort notes if completionDateOrder is set 
-            await executeFetch(GET_NOTES_URL, {method: 'GET'})
-            .then(response => response.json())
-            .then(notes => setNotes(notes))
-
+        const params = new URLSearchParams()
+        if (statusFilter !== 'all'){
+            params.set("statusFilter", statusFilter)
         }
+        
+        await executeFetch(GET_NOTES_URL + '?' + params.toString(), {method: 'GET'})
+        .then(response => response.json())
+        .then(notes => {
 
-        fetchData();
+            if (completionDateOrder === 'newest'){
+                notes.sort((noteA, noteB) => 
+                    -noteA.completionDate.localeCompare(noteB.completionDate)
+                )
+            }else if (completionDateOrder ==='oldest'){
+                notes.sort((noteA, noteB) => 
+                    noteA.completionDate.localeCompare(noteB.completionDate)
+                )
+            }
+            setNotes(notes)
+        })
+        .catch(e => {
+            console.log("Go to authorization")
+            if (e.response.status == 403) {
+                history.push('/login')
+            }
+        })
+    }
+    
+    useEffect(() => {
+        fetchNotes()
       }, [statusFilter]);
 
     async function deleteNote(id) {
-        await executeFetch(formParamsUrl(DELETE_NOTE_URL, {id: id}), {method: 'DELETE'})
-        setNotes((prev) => {
-            return prev.filter(note => note.id !== id)
+        await executeFetch(formParamsUrl(DELETE_NOTE_URL, {id: id}), {
+            method: 'DELETE',
+            credentials: 'include'
         })
-        //TODO: render after deleting note
+        .then(() =>{
+            setNotes((prev) => {
+                return prev.filter(note => note.id !== id)
+            })
+        })
     }
 
-    console.log('render')
+    console.log('render NotesList')
     return (
 <div>
     <form method="GET" id="notes_list_form"></form>
@@ -117,8 +121,13 @@ function NotesList(props){
                     </label>
                 </th>
                 <th>
-                    {/* TODO: clear statusFilter and statusFilter onclick */}
-                    <button className="btn btn-outline-danger" >clear</button>
+                    <button className="btn btn-outline-danger" onClick={ () =>{
+                        const params = new URLSearchParams(history.location.search)
+                        params.delete("completionDateOrder")
+                        params.delete("statusFilter")
+                        history.push({search: params.toString()})
+                    }
+                    }>clear</button>
                 </th>
             </tr>
         </thead>
@@ -126,15 +135,19 @@ function NotesList(props){
             
             {notes.map((note) =>
             <tr key={note.id}>
-                <td>
-                    <a className="link" href={"/edit_note/" + note.id}>{note.title}</a>
+                <td onClick={(e) => {history.push("/editNote/" + note.id)}}>
+                    <a className="link">
+                        {note.title}
+                    </a>
                 </td>
             
                 <td>{note.completionDate}</td>
                 <td>{note.status}</td>
             
                 <td>
-                    <button className="btn btn-danger" onClick={async () => {await deleteNote(note.id)}} >delete</button>
+                    <button className="btn btn-danger" onClick={async () => {await deleteNote(note.id)}} >
+                        delete
+                    </button>
                 </td>
             </tr>
             )}
