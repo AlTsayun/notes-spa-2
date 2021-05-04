@@ -4,6 +4,7 @@ import React from 'react'
 import { executeFetch } from '../../utils/fetchutils'
 import { formParamsUrl } from '../../utils/urlutils'
 import FilesInput from './FilesInput'
+import { wsSend } from "../../utils/wsutils"
 
 function EditNoteForm(props){
 
@@ -24,6 +25,18 @@ function EditNoteForm(props){
         files: [],
     })
 
+    props.wsClient.onmessage = (message) => {
+        let data = JSON.parse(message.data)
+        if (data.intention === 'note'){
+            console.log('Received note', data.body)
+            setNote(data.body)
+        } else {
+            props.superWsMessageHandler(message)
+        }
+    }
+
+
+
     async function fetchNote(){
         await executeFetch(formParamsUrl(GET_NOTE_URL, {id: note.id}), {method: 'GET'})
         .then(response => response.json())
@@ -43,7 +56,9 @@ function EditNoteForm(props){
         console.log('dt.files', dt.files)
         formData.append('files', dt.files)
 
-        await executeFetch(formParamsUrl(PUT_NOTE_URL, {id: note.id}), {method: 'PUT', body: formData})
+        note.id = params.id
+        wsSend(props.wsClient, JSON.stringify({ intention: 'update note', body: note }))
+        // await executeFetch(formParamsUrl(PUT_NOTE_URL, {id: note.id}), {method: 'PUT', body: formData})
     }
 
     function handleChange(e){
@@ -61,7 +76,7 @@ function EditNoteForm(props){
     }
         
     useEffect(() => {
-        fetchNote()
+        wsSend(props.wsClient, JSON.stringify({ intention: 'get note', body: { id: params.id } }))
       }, []);
     
     let filesFromChild = []
