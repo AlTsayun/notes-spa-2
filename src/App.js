@@ -13,6 +13,9 @@ import { wsSend } from './utils/wsutils';
 import EditNoteForm from './components/EditNoteForm/EditNoteForm';
 import LogIn from './components/Authentification/LogIn';
 import SignUp from './components/Authentification/SignUp';
+import { from, gql, useLazyQuery, useMutation} from '@apollo/client'
+
+import { ADD_NOTE_MUTATION, GET_NOTES_QUERY} from './GraphqlQueries'
 
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
@@ -33,10 +36,25 @@ function App() {
         }
     }
     wsClient.onmessage = superWsMessageHandler
-        
+
     let history = useHistory()
+
+    const [ requestAddNote, { called: requestAddNoteCalled, loading: requestAddNoteLoading, data: requestAddNoteData }] = 
+        useMutation(ADD_NOTE_MUTATION,
+             {refetchQueries: [{ query: GET_NOTES_QUERY, variables: { statusFilter: 'all' } }]}
+             )
+
+    // console.log('requestAddNoteCalled', requestAddNoteCalled)
+    // console.log('requestAddNoteLoading', requestAddNoteLoading)
+    // console.log('requestAddNoteData', requestAddNoteData)
+    
+    if (requestAddNoteCalled && !requestAddNoteLoading){
+        history.push(`/editNote/${requestAddNoteData.addNote.id}`)
+    }
+    
     async function createNote() {
-        wsSend(wsClient, JSON.stringify({intention: 'add note', message: {}}))
+        requestAddNote()
+        // wsSend(wsClient, JSON.stringify({intention: 'add note', message: {}}))
     }
 
     console.log('render App')

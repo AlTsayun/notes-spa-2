@@ -6,6 +6,10 @@ import { formParamsUrl } from '../../utils/urlutils'
 import FilesInput from './FilesInput'
 import { wsSend } from "../../utils/wsutils"
 
+import { gql, useQuery, useMutation} from '@apollo/client'
+
+import { GET_NOTE_QUERY } from '../../GraphqlQueries'
+
 function EditNoteForm(props){
 
     const GET_NOTE_URL = '/api/notes/:id'
@@ -35,15 +39,24 @@ function EditNoteForm(props){
         }
     }
 
-
-
-    async function fetchNote(){
-        await executeFetch(formParamsUrl(GET_NOTE_URL, {id: note.id}), {method: 'GET'})
-        .then(response => response.json())
-        .then(note => {
-            setNote(note)
-        })
+    const { loading, error, data, refetch } = useQuery(
+            GET_NOTE_QUERY,
+        { variables: {id: params.id }}
+        )
+        console.log('fetched data', data)
+    if (!loading){
+        console.log('received note:', data.getNote)
+        // setNote(data.getNote)
     }
+
+
+    // async function fetchNote(){
+    //     await executeFetch(formParamsUrl(GET_NOTE_URL, {id: note.id}), {method: 'GET'})
+    //     .then(response => response.json())
+    //     .then(note => {
+    //         setNote(note)
+    //     })
+    // }
 
     async function sendNote(){
         const formData  = new FormData();
@@ -57,7 +70,8 @@ function EditNoteForm(props){
         formData.append('files', dt.files)
 
         note.id = params.id
-        wsSend(props.wsClient, JSON.stringify({ intention: 'update note', body: note }))
+        
+        // wsSend(props.wsClient, JSON.stringify({ intention: 'update note', body: note }))
         // await executeFetch(formParamsUrl(PUT_NOTE_URL, {id: note.id}), {method: 'PUT', body: formData})
     }
 
@@ -75,9 +89,9 @@ function EditNoteForm(props){
         history.push('/')
     }
         
-    useEffect(() => {
-        wsSend(props.wsClient, JSON.stringify({ intention: 'get note', body: { id: params.id } }))
-      }, []);
+    // useEffect(() => {
+    //     wsSend(props.wsClient, JSON.stringify({ intention: 'get note', body: { id: params.id } }))
+    //   }, []);
     
     let filesFromChild = []
 

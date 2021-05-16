@@ -4,7 +4,10 @@ import React from 'react'
 import { executeFetch } from "../../utils/fetchutils"
 import { formParamsUrl } from "../../utils/urlutils"
 import { wsSend } from "../../utils/wsutils"
+import { client } from "websocket"
+import { gql, useQuery, useMutation} from '@apollo/client'
 
+import { GET_NOTES_QUERY, DELETE_NOTE_MUTATION } from '../../GraphqlQueries'
 
 function NotesList(props) {
 
@@ -26,28 +29,50 @@ function NotesList(props) {
         let data = JSON.parse(message.data)
         if (data.intention === 'notes'){
             console.log('Received notes', data.body)
-            setNotes(data.body)
+            // setNotes(data.body)
         } else if (data.intention === 'notes updated'){
-            wsSend(props.wsClient, JSON.stringify({
-                intention: 'get notes', 
-                body: { 
-                    statusFilter: statusFilter 
-                }
-            }))
+            // wsSend(props.wsClient, JSON.stringify({
+            //     intention: 'get notes', 
+            //     body: { 
+            //         statusFilter: statusFilter 
+            //     }
+            // }))
         } else {
             props.superWsMessageHandler(message)
         }
     }
 
+    let notes = []
 
-    const [notes, setNotes] = useState([])
+    const { loading, error, data, refetch } = useQuery(
+            GET_NOTES_QUERY,
+        {variables: {statusFilter}}
+        )
+        console.log('fetched data', data)
+    if (!loading){
+        notes = data.getNotes
+    }
 
-    useEffect(() => {
-        wsSend(props.wsClient, JSON.stringify({ intention: 'get notes', body: { statusFilter: statusFilter } }))
-    }, [statusFilter]);
+    // useEffect(() => {
+    //     wsSend(props.wsClient, JSON.stringify({ intention: 'get notes', body: { statusFilter: statusFilter } }))
+    // }, [statusFilter])
+
+    var [ requestRemoveNote, { called: requestRemoveNoteCalled, loading: requestRemoveNoteLoading, data: requestRemoveNoteData }] = 
+        useMutation(DELETE_NOTE_MUTATION, 
+            { refetchQueries: [{ query: GET_NOTES_QUERY, variables: { statusFilter: 'all' } }] }
+            )
+
+    console.log('requestRemoveNoteCalled', requestRemoveNoteCalled)
+    console.log('requestRemoveNoteLoading', requestRemoveNoteLoading)
+    console.log('requestRemoveNoteData', requestRemoveNoteData)
+
+    if(requestRemoveNoteCalled && !requestRemoveNoteLoading){
+        console.log('refetching')
+    }
 
     async function deleteNote(id) {
-        wsSend(props.wsClient, JSON.stringify({ intention: 'delete note', body: { id: id } }))
+        requestRemoveNote({variables: {noteId: id}})
+        // wsSend(props.wsClient, JSON.stringify({ intention: 'delete note', body: { id: id } }))
     }
 
     console.log('render NotesList')
