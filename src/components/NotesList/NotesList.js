@@ -46,10 +46,10 @@ function NotesList(props) {
 
     const { loading, error, data, refetch } = useQuery(
             GET_NOTES_QUERY,
-        {variables: {statusFilter}}
+        {variables: {statusFilter: statusFilter, completionDateOrder: completionDateOrder}}
         )
-        console.log('fetched data', data)
     if (!loading){
+        console.log('refetched notes', data.getNotes)
         notes = data.getNotes
     }
 
@@ -59,7 +59,7 @@ function NotesList(props) {
 
     var [ requestRemoveNote, { called: requestRemoveNoteCalled, loading: requestRemoveNoteLoading, data: requestRemoveNoteData }] = 
         useMutation(DELETE_NOTE_MUTATION, 
-            { refetchQueries: [{ query: GET_NOTES_QUERY, variables: { statusFilter: 'all' } }] }
+            { refetchQueries: [{ query: GET_NOTES_QUERY, variables: { statusFilter: 'all', completionDateOrder: 'not sorted' } }] }
             )
 
     console.log('requestRemoveNoteCalled', requestRemoveNoteCalled)
@@ -71,6 +71,7 @@ function NotesList(props) {
     }
 
     async function deleteNote(id) {
+        console.log('note', id, 'is requested for delete')
         requestRemoveNote({variables: {noteId: id}})
         // wsSend(props.wsClient, JSON.stringify({ intention: 'delete note', body: { id: id } }))
     }

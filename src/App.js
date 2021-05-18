@@ -41,7 +41,7 @@ function App() {
 
     const [ requestAddNote, { called: requestAddNoteCalled, loading: requestAddNoteLoading, data: requestAddNoteData }] = 
         useMutation(ADD_NOTE_MUTATION,
-             {refetchQueries: [{ query: GET_NOTES_QUERY, variables: { statusFilter: 'all' } }]}
+             {refetchQueries: [{ query: GET_NOTES_QUERY, variables: { statusFilter: 'all', completionDateOrder: 'not sorted' } }]}
              )
 
     // console.log('requestAddNoteCalled', requestAddNoteCalled)
